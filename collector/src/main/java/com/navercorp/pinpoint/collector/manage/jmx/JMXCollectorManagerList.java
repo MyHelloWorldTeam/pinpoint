@@ -47,8 +47,8 @@ public class JMXCollectorManagerList {
     @Autowired
     private ClusterManager clusterManager;
 
-    @Autowired
-    private HBaseManager hBaseManager;
+    //@Autowired
+    //private HBaseManager hBaseManager;
 
     public List<CollectorManager> getSupportList() {
         if (!isActive) {
@@ -60,7 +60,8 @@ public class JMXCollectorManagerList {
 
         ListUtils.addIfValueNotNull(supportManagerList, handlerManager);
         ListUtils.addIfValueNotNull(supportManagerList, clusterManager);
-        ListUtils.addIfValueNotNull(supportManagerList, hBaseManager);
+        //TODO
+        //ListUtils.addIfValueNotNull(supportManagerList, hBaseManager);
 
         return supportManagerList;
     }

@@ -13,62 +13,11 @@
         http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
 
     <context:component-scan
-            base-package="com.navercorp.pinpoint.collector.dao.hbase" />
+            base-package="com.navercorp.pinpoint.collector.dao.elasticsearch,
+            com.navercorp.pinpoint.collector.dao.hbase.mapper" />
 
-    <bean id="hbaseConfiguration" class="com.navercorp.pinpoint.common.hbase.HbaseConfigurationFactoryBean">
-        <property name="properties">
-            <props>
-                <prop key="hbase.zookeeper.quorum">${hbase.client.host}</prop>
-                <prop key="hbase.zookeeper.property.clientPort">${hbase.client.port}</prop>
-
-                <!--Root ZNode for HBase in ZooKeeper.-->
-                <prop key="zookeeper.znode.parent">${hbase.zookeeper.znode.parent:/hbase}</prop>
-
-                <!-- hbase default:true -->
-                <prop key="hbase.ipc.client.tcpnodelay">${hbase.ipc.client.tcpnodelay}</prop>
-                <!-- hbase default:60000 -->
-                <prop key="hbase.rpc.timeout">${hbase.rpc.timeout}</prop>
-                <!-- hbase default:Integer.MAX_VALUE -->
-                <prop key="hbase.client.operation.timeout">${hbase.client.operation.timeout}</prop>
-
-                <!-- hbase socket read timeout. default: 200000-->
-                <prop key="hbase.ipc.client.socket.timeout.read">${hbase.ipc.client.socket.timeout.read}</prop>
-                <!-- socket write timeout. hbase default: 600000-->
-                <prop key="hbase.ipc.client.socket.timeout.write">${hbase.ipc.client.socket.timeout.write}</prop>
-
-                <!-- hbase async put operation. -->
-                <prop key="hbase.client.async.enable">${hbase.client.async.enable:false}</prop>
-                <prop key="hbase.client.async.in.queuesize">${hbase.client.async.in.queuesize:10000}</prop>
-                <prop key="hbase.tablemultiplexer.flush.period.ms">${hbase.client.async.flush.period.ms:100}</prop>
-                <prop key="hbase.client.max.retries.in.queue">${hbase.client.async.max.retries.in.queue:10}</prop>
-            </props>
-        </property>
-    </bean>
-
-    <bean id="connectionFactory" class="com.navercorp.pinpoint.common.hbase.PooledHTableFactory">
-        <constructor-arg ref="hbaseConfiguration"/>
-        <constructor-arg value="${hbase.client.thread.max}"/>
-        <constructor-arg value="${hbase.client.threadPool.queueSize}"/>
-        <constructor-arg value="${hbase.client.threadPool.prestart}"/>
-    </bean>
-
-    <bean id="asyncOperation" class="com.navercorp.pinpoint.common.hbase.HBaseAsyncOperationFactory" factory-method="create">
-        <constructor-arg value="#{connectionFactory.getConnection()}"/>
-        <constructor-arg ref="hbaseConfiguration"/>
-    </bean>
-
-    <bean id="asyncOperationMetrics" class="com.navercorp.pinpoint.collector.monitor.HBaseAsyncOperationMetrics">
-        <constructor-arg ref="asyncOperation"/>
-    </bean>
-
-    <bean id="hbaseTemplate" class="com.navercorp.pinpoint.common.hbase.HbaseTemplate2" destroy-method="destroy">
-        <property name="configuration" ref="hbaseConfiguration"/>
-        <property name="tableFactory" ref="connectionFactory"/>
-        <property name="asyncOperation" ref="asyncOperation"/>
-    </bean>
-
-    <bean id="hBaseAdminTemplate" class="com.navercorp.pinpoint.common.hbase.HBaseAdminTemplate" destroy-method="close">
-        <constructor-arg ref="hbaseConfiguration" index="0"></constructor-arg>
+    <bean id="client" class="com.navercorp.pinpoint.collector.util.ElasticSearchClient">
+        <constructor-arg value="192.168.175.225"></constructor-arg>
     </bean>
 
     <bean id="applicationTraceIndexDistributor" class="com.sematext.hbase.wd.RowKeyDistributorByHashPrefix">
@@ -183,4 +132,5 @@
         <constructor-arg type="int" value="32"/>
         <constructor-arg type="int" value="8"/>
     </bean>
+
 </beans>

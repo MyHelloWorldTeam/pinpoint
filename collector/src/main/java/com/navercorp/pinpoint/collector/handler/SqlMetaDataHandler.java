@@ -23,6 +23,7 @@ import com.navercorp.pinpoint.thrift.dto.TSqlMetaData;
 import org.apache.thrift.TBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * @author emeroad
@@ -31,7 +32,7 @@ import org.slf4j.LoggerFactory;
 public class SqlMetaDataHandler implements RequestResponseHandler {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-//    @Autowired
+    @Autowired
     private SqlMetaDataDao sqlMetaDataDao;
 
     @Override

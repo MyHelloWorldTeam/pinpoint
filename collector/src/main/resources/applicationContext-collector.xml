@@ -15,8 +15,7 @@
 <context:annotation-config/>
 
     <context:component-scan
-            base-package="com.navercorp.pinpoint.collector.dao.hbase,
-                        com.navercorp.pinpoint.collector.handler,
+            base-package="com.navercorp.pinpoint.collector.handler,
                         com.navercorp.pinpoint.collector.manage,
                         com.navercorp.pinpoint.collector.mapper,
                         com.navercorp.pinpoint.collector.util,
@@ -44,14 +43,14 @@
         <property name="properties" ref="pinpoint_collector_properties"/>
     </bean>
 
-    <import resource="classpath:applicationContext-hbase.xml"/>
+    <import resource="applicationContext-elasticsearch.xml"></import>
 
     <bean id="daoAutoFlusher" class="com.navercorp.pinpoint.collector.dao.AutoFlusher" init-method="initialize" destroy-method="shutdown">
         <beans:property name="cachedStatisticsDaoList">
             <beans:list>
-                <beans:ref bean="hbaseMapStatisticsCallerDao"/>
-                <beans:ref bean="hbaseMapStatisticsCalleeDao"/>
-                <beans:ref bean="hbaseMapResponseTimeDao"/>
+                <beans:ref bean="ESMapStatisticsCallerDao"/>
+                <beans:ref bean="ESMapStatisticsCalleeDao"/>
+                <beans:ref bean="ESMapResponseTimeDao"/>
             </beans:list>
         </beans:property>
         <property name="flushPeriod" value="${statistics.flushPeriod}"/>
@@ -78,8 +77,10 @@
         <constructor-arg ref="targetClusterPointRepository"/>
     </bean>
 
+    <!--
     <bean id="hBaseManager" class="com.navercorp.pinpoint.collector.manage.HBaseManager">
     </bean>
+    -->
 
     <!-- DispatchHandler-related Beans -->
     <bean id="tcpDispatchHandler" class="com.navercorp.pinpoint.collector.receiver.TcpDispatchHandler"/>
@@ -294,10 +295,7 @@
     </bean>
     
     <bean id="sqlMetaDataHandler" class="com.navercorp.pinpoint.collector.handler.SqlMetaDataHandler">
-        <property name="sqlMetaDataDao" ref="hbaseSqlMetaDataDao"/>
     </bean>
-    
-    <bean id="hbaseSqlMetaDataDao" class="com.navercorp.pinpoint.collector.dao.hbase.HbaseSqlMetaDataDao"/>
 
     <bean id="sequenceSpanEventFilter" class="com.navercorp.pinpoint.common.server.bo.filter.SequenceSpanEventFilter">
         <constructor-arg index="0" value="${collector.spanEvent.sequence.limit:10000}"/>

@@ -56,8 +56,8 @@ public class AgentInfoBo {
     private final int endStatus;
 
     // Should be serialized separately
-    private final ServerMetaDataBo serverMetaData;
-    private final JvmInfoBo jvmInfo;
+    private  ServerMetaDataBo serverMetaData;
+    private  JvmInfoBo jvmInfo;
 
     private AgentInfoBo(Builder builder) {
         this.hostName = builder.hostName;
@@ -194,6 +194,13 @@ public class AgentInfoBo {
         sb.append(", endStatus=").append(endStatus);
         sb.append('}');
         return sb.toString();
+    }
+
+    public void setServerMetaData(ServerMetaDataBo serverMetaData) {
+        this.serverMetaData = serverMetaData;
+    }
+    public void setJvmInfo(JvmInfoBo jvmInfo) {
+        this.jvmInfo = jvmInfo;
     }
 
     public static class Builder {

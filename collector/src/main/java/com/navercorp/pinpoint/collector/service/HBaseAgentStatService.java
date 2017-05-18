@@ -32,7 +32,7 @@ import org.springframework.stereotype.Service;
 /**
  * @author minwoo.jung
  */
-@Service("hBaseAgentStatService")
+//@Service("hBaseAgentStatService")
 public class HBaseAgentStatService implements AgentStatService {
 
     private final Logger logger = LoggerFactory.getLogger(HBaseAgentStatService.class.getName());
