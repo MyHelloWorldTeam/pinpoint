@@ -47,19 +47,19 @@ public class ESAgentStatService implements AgentStatService {
         ObjectMapper mapper = new ObjectMapper();
         try {
             BulkRequestBuilder bulkRequest = transportClient.prepareBulk();
-            bulkRequest.add(transportClient.prepareIndex(AGENT_STAT_VER2.getNameAsString(),AGENT_STAT_VER2.getNameAsString())
+            bulkRequest.add(transportClient.prepareIndex(AGENT_STAT_VER2.getNameAsString().toLowerCase(),AGENT_STAT_VER2.getNameAsString().toLowerCase())
                     .setSource(mapper.writeValueAsBytes(agentStatBo.getJvmGcBos()), XContentType.JSON));
-            bulkRequest.add(transportClient.prepareIndex(AGENT_STAT_VER2.getNameAsString(),AGENT_STAT_VER2.getNameAsString())
+            bulkRequest.add(transportClient.prepareIndex(AGENT_STAT_VER2.getNameAsString().toLowerCase(),AGENT_STAT_VER2.getNameAsString().toLowerCase())
                     .setSource(mapper.writeValueAsBytes(agentStatBo.getJvmGcDetailedBos()), XContentType.JSON));
-            bulkRequest.add(transportClient.prepareIndex(AGENT_STAT_VER2.getNameAsString(),AGENT_STAT_VER2.getNameAsString())
+            bulkRequest.add(transportClient.prepareIndex(AGENT_STAT_VER2.getNameAsString().toLowerCase(),AGENT_STAT_VER2.getNameAsString().toLowerCase())
                     .setSource(mapper.writeValueAsBytes(agentStatBo.getActiveTraceBos()), XContentType.JSON));
-            bulkRequest.add(transportClient.prepareIndex(AGENT_STAT_VER2.getNameAsString(),AGENT_STAT_VER2.getNameAsString())
+            bulkRequest.add(transportClient.prepareIndex(AGENT_STAT_VER2.getNameAsString().toLowerCase(),AGENT_STAT_VER2.getNameAsString().toLowerCase())
                     .setSource(mapper.writeValueAsBytes(agentStatBo.getCpuLoadBos()), XContentType.JSON));
-            bulkRequest.add(transportClient.prepareIndex(AGENT_STAT_VER2.getNameAsString(),AGENT_STAT_VER2.getNameAsString())
+            bulkRequest.add(transportClient.prepareIndex(AGENT_STAT_VER2.getNameAsString().toLowerCase(),AGENT_STAT_VER2.getNameAsString().toLowerCase())
                     .setSource(mapper.writeValueAsBytes(agentStatBo.getResponseTimeBos()), XContentType.JSON));
-            bulkRequest.add(transportClient.prepareIndex(AGENT_STAT_VER2.getNameAsString(),AGENT_STAT_VER2.getNameAsString())
+            bulkRequest.add(transportClient.prepareIndex(AGENT_STAT_VER2.getNameAsString().toLowerCase(),AGENT_STAT_VER2.getNameAsString().toLowerCase())
                     .setSource(mapper.writeValueAsBytes(agentStatBo.getTransactionBos()), XContentType.JSON));
-            bulkRequest.add(transportClient.prepareIndex(AGENT_STAT_VER2.getNameAsString(),AGENT_STAT_VER2.getNameAsString())
+            bulkRequest.add(transportClient.prepareIndex(AGENT_STAT_VER2.getNameAsString().toLowerCase(),AGENT_STAT_VER2.getNameAsString().toLowerCase())
                     .setSource(mapper.writeValueAsBytes(agentStatBo.getDataSourceListBos()), XContentType.JSON));
             BulkResponse bulkResponse = bulkRequest.get();
             if(bulkResponse.hasFailures()){
