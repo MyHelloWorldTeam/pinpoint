@@ -17,7 +17,7 @@
             com.navercorp.pinpoint.collector.dao.hbase.mapper" />
 
     <bean id="client" class="com.navercorp.pinpoint.collector.util.ElasticSearchClient">
-        <constructor-arg value="192.168.175.225"></constructor-arg>
+        <constructor-arg value="localhost"></constructor-arg>
     </bean>
 
     <bean id="applicationTraceIndexDistributor" class="com.sematext.hbase.wd.RowKeyDistributorByHashPrefix">
