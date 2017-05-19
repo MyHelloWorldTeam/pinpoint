@@ -18,9 +18,10 @@ package com.navercorp.pinpoint.collector.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.navercorp.pinpoint.common.server.bo.stat.AgentStatBo;
+import com.navercorp.pinpoint.common.server.bo.stat.AgentStatDataPoint;
+import com.navercorp.pinpoint.common.util.CollectionUtils;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.slf4j.Logger;
@@ -28,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.List;
 
 import static com.navercorp.pinpoint.common.hbase.HBaseTables.AGENT_STAT_VER2;
 
@@ -44,31 +46,36 @@ public class ESAgentStatService implements AgentStatService {
 
     @Override
     public void save(AgentStatBo agentStatBo) {
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-            BulkRequestBuilder bulkRequest = transportClient.prepareBulk();
-            bulkRequest.add(transportClient.prepareIndex(AGENT_STAT_VER2.getNameAsString().toLowerCase(),AGENT_STAT_VER2.getNameAsString().toLowerCase())
-                    .setSource(mapper.writeValueAsBytes(agentStatBo.getJvmGcBos()), XContentType.JSON));
-            bulkRequest.add(transportClient.prepareIndex(AGENT_STAT_VER2.getNameAsString().toLowerCase(),AGENT_STAT_VER2.getNameAsString().toLowerCase())
-                    .setSource(mapper.writeValueAsBytes(agentStatBo.getJvmGcDetailedBos()), XContentType.JSON));
-            bulkRequest.add(transportClient.prepareIndex(AGENT_STAT_VER2.getNameAsString().toLowerCase(),AGENT_STAT_VER2.getNameAsString().toLowerCase())
-                    .setSource(mapper.writeValueAsBytes(agentStatBo.getActiveTraceBos()), XContentType.JSON));
-            bulkRequest.add(transportClient.prepareIndex(AGENT_STAT_VER2.getNameAsString().toLowerCase(),AGENT_STAT_VER2.getNameAsString().toLowerCase())
-                    .setSource(mapper.writeValueAsBytes(agentStatBo.getCpuLoadBos()), XContentType.JSON));
-            bulkRequest.add(transportClient.prepareIndex(AGENT_STAT_VER2.getNameAsString().toLowerCase(),AGENT_STAT_VER2.getNameAsString().toLowerCase())
-                    .setSource(mapper.writeValueAsBytes(agentStatBo.getResponseTimeBos()), XContentType.JSON));
-            bulkRequest.add(transportClient.prepareIndex(AGENT_STAT_VER2.getNameAsString().toLowerCase(),AGENT_STAT_VER2.getNameAsString().toLowerCase())
-                    .setSource(mapper.writeValueAsBytes(agentStatBo.getTransactionBos()), XContentType.JSON));
-            bulkRequest.add(transportClient.prepareIndex(AGENT_STAT_VER2.getNameAsString().toLowerCase(),AGENT_STAT_VER2.getNameAsString().toLowerCase())
-                    .setSource(mapper.writeValueAsBytes(agentStatBo.getDataSourceListBos()), XContentType.JSON));
-            BulkResponse bulkResponse = bulkRequest.get();
-            if(bulkResponse.hasFailures()){
-                logger.warn("Insert agentStat fail. {}", bulkResponse.buildFailureMessage());
-            }
-            logger.debug("Insert agentStat. {}", agentStatBo);
 
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
+        BulkRequestBuilder bulkRequest = transportClient.prepareBulk();
+        add(agentStatBo.getJvmGcBos(),bulkRequest);
+        add(agentStatBo.getJvmGcDetailedBos(),bulkRequest);
+        add(agentStatBo.getActiveTraceBos(),bulkRequest);
+        add(agentStatBo.getCpuLoadBos(),bulkRequest);
+        add(agentStatBo.getResponseTimeBos(),bulkRequest);
+        add(agentStatBo.getTransactionBos(),bulkRequest);
+        add(agentStatBo.getDataSourceListBos(),bulkRequest);
+
+        BulkResponse bulkResponse = bulkRequest.get();
+        if (bulkResponse.hasFailures()) {
+            logger.warn("Insert agentStat fail. {}", bulkResponse.buildFailureMessage());
+        }
+        logger.debug("Insert agentStat. {}", agentStatBo);
+
+    }
+
+    private <T extends AgentStatDataPoint> void add(List<T> list, BulkRequestBuilder bulkRequest) {
+        ObjectMapper mapper = new ObjectMapper();
+        if (!CollectionUtils.isEmpty(list)) {
+            for (T t : list) {
+                try {
+                    bulkRequest.add(transportClient.prepareIndex(AGENT_STAT_VER2.getNameAsString().toLowerCase(), AGENT_STAT_VER2.getNameAsString().toLowerCase())
+                            .setSource(mapper.writeValueAsBytes(t), XContentType.JSON));
+                } catch (JsonProcessingException e) {
+                    e.printStackTrace();
+                }
+            }
+
         }
     }
 }
