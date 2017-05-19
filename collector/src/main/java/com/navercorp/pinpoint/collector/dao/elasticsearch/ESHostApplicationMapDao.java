@@ -26,11 +26,14 @@ import com.navercorp.pinpoint.common.server.util.AcceptedTimeService;
 import com.navercorp.pinpoint.common.util.TimeSlot;
 import com.navercorp.pinpoint.common.util.TimeUtils;
 import com.sematext.hbase.wd.AbstractRowKeyDistributor;
+import org.elasticsearch.client.transport.TransportClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;
+
+import javax.annotation.Resource;
 
 /**
  * 
@@ -54,6 +57,9 @@ public class ESHostApplicationMapDao implements HostApplicationMapDao {
 
     // FIXME should modify to save a cachekey at each 30~50 seconds instead of saving at each time
     private final AtomicLongUpdateMap<CacheKey> updater = new AtomicLongUpdateMap<>();
+
+    @Resource(name = "client")
+    TransportClient transportClient;
 
 
     @Override

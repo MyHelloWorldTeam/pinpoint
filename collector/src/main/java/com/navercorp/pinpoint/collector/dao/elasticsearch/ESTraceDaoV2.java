@@ -1,5 +1,7 @@
 package com.navercorp.pinpoint.collector.dao.elasticsearch;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.navercorp.pinpoint.collector.dao.TraceDao;
 import com.navercorp.pinpoint.common.hbase.HbaseOperations2;
 import com.navercorp.pinpoint.common.server.bo.SpanBo;
@@ -11,7 +13,9 @@ import com.navercorp.pinpoint.common.server.bo.serializer.trace.v2.SpanSerialize
 import com.navercorp.pinpoint.common.util.TransactionId;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.hbase.client.Put;
+import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +25,7 @@ import org.springframework.stereotype.Repository;
 import javax.annotation.Resource;
 import java.util.List;
 
+import static com.navercorp.pinpoint.common.hbase.HBaseTables.API_METADATA;
 import static com.navercorp.pinpoint.common.hbase.HBaseTables.TRACE_V2;
 
 /**
@@ -64,6 +69,18 @@ public class ESTraceDaoV2 implements TraceDao {
         //if (!success) {
         //    hbaseTemplate.put(TRACE_V2, put);
         //}
+
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            byte[] json = mapper.writeValueAsBytes(spanBo);
+            IndexResponse response = transportClient.prepareIndex(TRACE_V2.getNameAsString().toLowerCase(),TRACE_V2.getNameAsString().toLowerCase())
+                    .setSource(json, XContentType.JSON)
+                    .get();
+            response.status();
+
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
 
     }
 

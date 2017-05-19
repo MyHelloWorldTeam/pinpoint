@@ -25,9 +25,12 @@ import com.navercorp.pinpoint.common.server.util.SpanUtils;
 import com.navercorp.pinpoint.thrift.dto.TSpan;
 import com.sematext.hbase.wd.AbstractRowKeyDistributor;
 import org.apache.hadoop.hbase.client.Put;
+import org.elasticsearch.client.transport.TransportClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;
+
+import javax.annotation.Resource;
 
 import static com.navercorp.pinpoint.common.hbase.HBaseTables.*;
 
@@ -46,6 +49,9 @@ public class ESApplicationTraceIndexDao implements ApplicationTraceIndexDao {
     @Autowired
     @Qualifier("applicationTraceIndexDistributor")
     private AbstractRowKeyDistributor rowKeyDistributor;
+
+    @Resource(name = "client")
+    TransportClient transportClient;
 
     @Override
     public void insert(final TSpan span) {
@@ -69,6 +75,7 @@ public class ESApplicationTraceIndexDao implements ApplicationTraceIndexDao {
         //if (!success) {
         //    hbaseTemplate.put(APPLICATION_TRACE_INDEX, put);
         //}
+
     }
 
     private byte[] makeQualifier(final TSpan span) {

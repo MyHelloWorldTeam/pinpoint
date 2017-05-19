@@ -16,20 +16,29 @@
 
 package com.navercorp.pinpoint.collector.dao.elasticsearch;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.navercorp.pinpoint.collector.dao.ApiMetaDataDao;
 import com.navercorp.pinpoint.common.buffer.AutomaticBuffer;
 import com.navercorp.pinpoint.common.buffer.Buffer;
 import com.navercorp.pinpoint.common.hbase.HBaseTables;
-import com.navercorp.pinpoint.common.hbase.HbaseOperations2;
 import com.navercorp.pinpoint.common.server.bo.ApiMetaDataBo;
 import com.navercorp.pinpoint.thrift.dto.TApiMetaData;
 import com.sematext.hbase.wd.RowKeyDistributorByHashPrefix;
 import org.apache.hadoop.hbase.client.Put;
+import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;
+
+import javax.annotation.Resource;
+
+import static com.navercorp.pinpoint.common.hbase.HBaseTables.API_METADATA;
+import static com.navercorp.pinpoint.common.hbase.HBaseTables.API_METADATA_CF_API;
 
 /**
  * @author emeroad
@@ -43,6 +52,9 @@ public class ESApiMetaDataDao implements ApiMetaDataDao {
     @Autowired
     @Qualifier("metadataRowKeyDistributor")
     private RowKeyDistributorByHashPrefix rowKeyDistributorByHashPrefix;
+
+    @Resource(name = "client")
+    TransportClient transportClient;
 
     @Override
     public void insert(TApiMetaData apiMetaData) {
@@ -71,11 +83,21 @@ public class ESApiMetaDataDao implements ApiMetaDataDao {
         }
         
         final byte[] apiMetaDataBytes = buffer.getBuffer();
-        put.addColumn(HBaseTables.API_METADATA_CF_API, HBaseTables.API_METADATA_CF_API_QUALI_SIGNATURE, apiMetaDataBytes);
+        put.addColumn(API_METADATA_CF_API, HBaseTables.API_METADATA_CF_API_QUALI_SIGNATURE, apiMetaDataBytes);
 
         //hbaseTemplate.put(HBaseTables.API_METADATA, put);
-        //TODO
-        System.out.println("apiMetaData = [" + apiMetaData + "]");
+
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            byte[] json = mapper.writeValueAsBytes(apiMetaDataBo);
+            IndexResponse response = transportClient.prepareIndex(API_METADATA.getNameAsString().toLowerCase(),API_METADATA.getNameAsString().toLowerCase())
+                    .setSource(json, XContentType.JSON)
+                    .get();
+            response.status();
+
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
     }
 
     private byte[] getDistributedKey(byte[] rowKey) {

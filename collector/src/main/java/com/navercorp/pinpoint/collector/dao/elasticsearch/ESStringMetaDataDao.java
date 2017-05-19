@@ -16,6 +16,8 @@
 
 package com.navercorp.pinpoint.collector.dao.elasticsearch;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.navercorp.pinpoint.collector.dao.StringMetaDataDao;
 import com.navercorp.pinpoint.common.hbase.HBaseTables;
 import com.navercorp.pinpoint.common.hbase.HbaseOperations2;
@@ -24,11 +26,19 @@ import com.navercorp.pinpoint.thrift.dto.TStringMetaData;
 import com.sematext.hbase.wd.RowKeyDistributorByHashPrefix;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;
+
+import javax.annotation.Resource;
+
+import static com.navercorp.pinpoint.common.hbase.HBaseTables.STRING_METADATA;
+import static com.navercorp.pinpoint.common.hbase.HBaseTables.TRACE_V2;
 
 /**
  * @author emeroad
@@ -43,6 +53,8 @@ public class ESStringMetaDataDao implements StringMetaDataDao {
     @Qualifier("metadataRowKeyDistributor")
     private RowKeyDistributorByHashPrefix rowKeyDistributorByHashPrefix;
 
+    @Resource(name = "client")
+    TransportClient transportClient;
     @Override
     public void insert(TStringMetaData stringMetaData) {
         if (stringMetaData == null) {
@@ -62,6 +74,17 @@ public class ESStringMetaDataDao implements StringMetaDataDao {
         put.addColumn(HBaseTables.STRING_METADATA_CF_STR, HBaseTables.STRING_METADATA_CF_STR_QUALI_STRING, sqlBytes);
 
         //hbaseTemplate.put(HBaseTables.STRING_METADATA, put);
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            byte[] json = mapper.writeValueAsBytes(stringMetaDataBo);
+            IndexResponse response = transportClient.prepareIndex(STRING_METADATA.getNameAsString().toLowerCase(),STRING_METADATA.getNameAsString().toLowerCase())
+                    .setSource(json, XContentType.JSON)
+                    .get();
+            response.status();
+
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
     }
 
     private byte[] getDistributedKey(byte[] rowKey) {

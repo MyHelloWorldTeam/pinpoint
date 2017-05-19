@@ -16,6 +16,8 @@
 
 package com.navercorp.pinpoint.collector.dao.elasticsearch;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.navercorp.pinpoint.collector.dao.AgentEventDao;
 import com.navercorp.pinpoint.collector.dao.hbase.mapper.AgentEventValueMapper;
 import com.navercorp.pinpoint.common.hbase.HBaseTables;
@@ -26,10 +28,18 @@ import com.navercorp.pinpoint.common.server.util.RowKeyUtils;
 import com.navercorp.pinpoint.common.util.BytesUtils;
 import com.navercorp.pinpoint.common.util.TimeUtils;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
+
+import javax.annotation.Resource;
+
+import static com.navercorp.pinpoint.common.hbase.HBaseTables.AGENTINFO;
+import static com.navercorp.pinpoint.common.hbase.HBaseTables.AGENT_EVENT;
 
 /**
  * @author HyunGil Jeong
@@ -39,9 +49,8 @@ public class ESAgentEventDao implements AgentEventDao {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-
-    @Autowired
-    private AgentEventValueMapper valueMapper;
+    @Resource(name = "client")
+    TransportClient transportClient;
 
     @Override
     public void insert(AgentEventBo agentEventBo) {
@@ -53,21 +62,17 @@ public class ESAgentEventDao implements AgentEventDao {
             logger.debug("insert event. {}", agentEventBo.toString());
         }
 
-        final String agentId = agentEventBo.getAgentId();
-        final long eventTimestamp = agentEventBo.getEventTimestamp();
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            byte[] json = mapper.writeValueAsBytes(agentEventBo);
+            IndexResponse response = transportClient.prepareIndex(AGENT_EVENT.getNameAsString().toLowerCase(),AGENT_EVENT.getNameAsString().toLowerCase())
+                    .setSource(json, XContentType.JSON)
+                    .get();
+            response.status();
 
-        byte[] rowKey = createRowKey(agentId, eventTimestamp);
-
-        final AgentEventType eventType = agentEventBo.getEventType();
-        byte[] qualifier = Bytes.toBytes(eventType.getCode());
-
-        //this.hbaseTemplate.put(HBaseTables.AGENT_EVENT, rowKey, HBaseTables.AGENT_EVENT_CF_EVENTS, qualifier, agentEventBo, this.valueMapper);
-    }
-
-    byte[] createRowKey(String agentId, long eventTimestamp) {
-        byte[] agentIdKey = BytesUtils.toBytes(agentId);
-        long reverseStartTimestamp = TimeUtils.reverseTimeMillis(eventTimestamp);
-        return RowKeyUtils.concatFixedByteAndLong(agentIdKey, HBaseTables.AGENT_NAME_MAX_LEN, reverseStartTimestamp);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
     }
 
 }

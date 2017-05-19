@@ -26,12 +26,14 @@ import com.navercorp.pinpoint.common.util.ApplicationMapStatisticsUtils;
 import com.navercorp.pinpoint.common.util.TimeSlot;
 import com.sematext.hbase.wd.RowKeyDistributorByHashPrefix;
 import org.apache.hadoop.hbase.client.Increment;
+import org.elasticsearch.client.transport.TransportClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;
 
+import javax.annotation.Resource;
 import java.util.List;
 import java.util.Map;
 
@@ -64,6 +66,9 @@ public class ESMapResponseTimeDao implements MapResponseTimeDao {
     @Autowired
     @Qualifier("statisticsSelfRowKeyDistributor")
     private RowKeyDistributorByHashPrefix rowKeyDistributorByHashPrefix;
+
+    @Resource(name = "client")
+    TransportClient transportClient;
 
     private final boolean useBulk;
 

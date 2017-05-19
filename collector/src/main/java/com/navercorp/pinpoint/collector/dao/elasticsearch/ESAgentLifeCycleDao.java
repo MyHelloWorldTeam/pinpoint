@@ -16,18 +16,22 @@
 
 package com.navercorp.pinpoint.collector.dao.elasticsearch;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.navercorp.pinpoint.collector.dao.AgentLifeCycleDao;
 import com.navercorp.pinpoint.collector.dao.hbase.mapper.AgentLifeCycleValueMapper;
-import com.navercorp.pinpoint.common.hbase.HBaseTables;
-import com.navercorp.pinpoint.common.hbase.HbaseOperations2;
 import com.navercorp.pinpoint.common.server.bo.AgentLifeCycleBo;
-import com.navercorp.pinpoint.common.util.BytesUtils;
-import com.navercorp.pinpoint.common.util.TimeUtils;
-import org.apache.hadoop.hbase.util.Bytes;
+import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
+
+import javax.annotation.Resource;
+
+import static com.navercorp.pinpoint.common.hbase.HBaseTables.AGENT_LIFECYCLE;
 
 /**
  * @author HyunGil Jeong
@@ -37,8 +41,8 @@ public class ESAgentLifeCycleDao implements AgentLifeCycleDao {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    @Autowired
-    private AgentLifeCycleValueMapper valueMapper;
+    @Resource(name = "client")
+    TransportClient transportClient;
 
     @Override
     public void insert(AgentLifeCycleBo agentLifeCycleBo) {
@@ -50,29 +54,18 @@ public class ESAgentLifeCycleDao implements AgentLifeCycleDao {
             logger.debug("insert agent life cycle. {}", agentLifeCycleBo.toString());
         }
 
-        final String agentId = agentLifeCycleBo.getAgentId();
-        final long startTimestamp = agentLifeCycleBo.getStartTimestamp();
-        final long eventIdentifier = agentLifeCycleBo.getEventIdentifier();
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            byte[] json = mapper.writeValueAsBytes(agentLifeCycleBo);
+            IndexResponse response = transportClient.prepareIndex(AGENT_LIFECYCLE.getNameAsString().toLowerCase(),AGENT_LIFECYCLE.getNameAsString().toLowerCase())
+                    .setSource(json, XContentType.JSON)
+                    .get();
+            response.status();
 
-        byte[] rowKey = createRowKey(agentId, startTimestamp, eventIdentifier);
-
-        //this.hbaseTemplate.put(HBaseTables.AGENT_LIFECYCLE, rowKey, HBaseTables.AGENT_LIFECYCLE_CF_STATUS, HBaseTables.AGENT_LIFECYCLE_CF_STATUS_QUALI_STATES,
-        //        agentLifeCycleBo, this.valueMapper);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
     }
 
-    byte[] createRowKey(String agentId, long startTimestamp, long eventIdentifier) {
-        byte[] agentIdKey = Bytes.toBytes(agentId);
-        long reverseStartTimestamp = TimeUtils.reverseTimeMillis(startTimestamp);
-        long reverseEventCounter = TimeUtils.reverseTimeMillis(eventIdentifier);
-
-        byte[] rowKey = new byte[HBaseTables.AGENT_NAME_MAX_LEN + BytesUtils.LONG_BYTE_LENGTH + BytesUtils.LONG_BYTE_LENGTH];
-        BytesUtils.writeBytes(rowKey, 0, agentIdKey);
-        int offset = HBaseTables.AGENT_NAME_MAX_LEN;
-        BytesUtils.writeLong(reverseStartTimestamp, rowKey, offset);
-        offset += BytesUtils.LONG_BYTE_LENGTH;
-        BytesUtils.writeLong(reverseEventCounter, rowKey, offset);
-
-        return rowKey;
-    }
 
 }
