@@ -63,7 +63,7 @@ public class ESAgentStatService implements AgentStatService {
                     .setSource(mapper.writeValueAsBytes(agentStatBo.getDataSourceListBos()), XContentType.JSON));
             BulkResponse bulkResponse = bulkRequest.get();
             if(bulkResponse.hasFailures()){
-
+                logger.warn("Insert agentStat fail. {}", bulkResponse.buildFailureMessage());
             }
             logger.debug("Insert agentStat. {}", agentStatBo);
 

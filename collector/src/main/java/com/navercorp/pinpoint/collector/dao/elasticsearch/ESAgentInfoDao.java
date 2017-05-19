@@ -100,12 +100,12 @@ public class ESAgentInfoDao implements AgentInfoDao {
 
         ObjectMapper mapper = new ObjectMapper();
         try {
-            byte[] json = mapper.writeValueAsBytes(agentInfo);
+            byte[] json = mapper.writeValueAsBytes(agentInfoBo);
             IndexResponse response = transportClient.prepareIndex(AGENTINFO.getNameAsString().toLowerCase(),AGENTINFO.getNameAsString().toLowerCase())
                     .setSource(json, XContentType.JSON)
                     .get();
             response.status();
-            logger.debug("Insert agentInfo. {}", agentInfo);
+            logger.debug("Insert agentInfo. {}", agentInfoBo);
 
         } catch (JsonProcessingException e) {
             e.printStackTrace();
