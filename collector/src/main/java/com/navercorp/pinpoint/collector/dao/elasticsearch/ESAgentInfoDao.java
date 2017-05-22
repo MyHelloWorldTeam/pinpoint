@@ -18,6 +18,7 @@ package com.navercorp.pinpoint.collector.dao.elasticsearch;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.annotation.JsonAppend;
 import com.navercorp.pinpoint.collector.dao.AgentInfoDao;
 import com.navercorp.pinpoint.collector.mapper.thrift.ThriftBoMapper;
 import com.navercorp.pinpoint.common.hbase.HBaseTables;
@@ -41,6 +42,9 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.Resource;
+
+import java.util.Calendar;
+import java.util.Date;
 
 import static com.navercorp.pinpoint.common.hbase.HBaseTables.AGENTINFO;
 
@@ -100,8 +104,10 @@ public class ESAgentInfoDao implements AgentInfoDao {
 
         ObjectMapper mapper = new ObjectMapper();
         try {
-            byte[] json = mapper.writeValueAsBytes(agentInfoBo);
-            IndexResponse response = transportClient.prepareIndex(AGENTINFO.getNameAsString().toLowerCase(),AGENTINFO.getNameAsString().toLowerCase())
+
+            String json = mapper.addMixIn(AgentInfoBo.class, TimestampMixin.class).writerFor(AgentInfoBo.class)
+                    .withAttribute("timestamp", Calendar.getInstance().getTimeInMillis()).writeValueAsString(agentInfoBo);
+            IndexResponse response = transportClient.prepareIndex(AGENTINFO.getNameAsString().toLowerCase(), AGENTINFO.getNameAsString().toLowerCase())
                     .setSource(json, XContentType.JSON)
                     .get();
             response.status();
@@ -110,5 +116,13 @@ public class ESAgentInfoDao implements AgentInfoDao {
         } catch (JsonProcessingException e) {
             e.printStackTrace();
         }
+    }
+
+    @JsonAppend(
+            attrs = {
+                    @JsonAppend.Attr(value = "timestamp")
+            }
+    )
+    public static class TimestampMixin {
     }
 }
