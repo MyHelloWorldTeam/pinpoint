@@ -22,9 +22,9 @@ import com.navercorp.pinpoint.common.util.ApplicationMapStatisticsUtils;
  * @author emeroad
  */
 public class CallRowKey implements RowKey {
-    private final String callApplicationName;
-    private final short callServiceType;
-    private final long rowTimeSlot;
+    public final String callApplicationName;
+    public final short callServiceType;
+    public final long rowTimeSlot;
 
     // WARNING - cached hash value should not be included for equals/hashCode
     private int hash;

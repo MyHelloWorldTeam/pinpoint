@@ -16,6 +16,8 @@
 
 package com.navercorp.pinpoint.collector.dao.elasticsearch;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.navercorp.pinpoint.collector.dao.HostApplicationMapDao;
 import com.navercorp.pinpoint.collector.util.AtomicLongUpdateMap;
 import com.navercorp.pinpoint.common.buffer.AutomaticBuffer;
@@ -26,7 +28,9 @@ import com.navercorp.pinpoint.common.server.util.AcceptedTimeService;
 import com.navercorp.pinpoint.common.util.TimeSlot;
 import com.navercorp.pinpoint.common.util.TimeUtils;
 import com.sematext.hbase.wd.AbstractRowKeyDistributor;
+import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,8 +39,13 @@ import org.springframework.stereotype.Repository;
 
 import javax.annotation.Resource;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import static com.navercorp.pinpoint.common.hbase.HBaseTables.AGENT_LIFECYCLE;
+import static com.navercorp.pinpoint.common.hbase.HBaseTables.HOST_APPLICATION_MAP_VER2;
+
 /**
- * 
  * @author netspider
  * @author emeroad
  */
@@ -87,7 +96,6 @@ public class ESHostApplicationMapDao implements HostApplicationMapDao {
     }
 
 
-
     private void insertHostVer2(String host, String bindApplicationName, short bindServiceType, long statisticsRowSlot, String parentApplicationName, short parentServiceType) {
         if (logger.isDebugEnabled()) {
             logger.debug("Insert host-application map. host={}, bindApplicationName={}, bindServiceType={}, parentApplicationName={}, parentServiceType={}",
@@ -107,6 +115,21 @@ public class ESHostApplicationMapDao implements HostApplicationMapDao {
         //    logger.warn("retry one. Caused:{}", ex.getCause(), ex);
         //    hbaseTemplate.put(HBaseTables.HOST_APPLICATION_MAP_VER2, rowKey, HBaseTables.HOST_APPLICATION_MAP_VER2_CF_MAP, columnName, null);
         //}
+        ObjectMapper mapper = new ObjectMapper();
+
+        Map json = new HashMap();
+        json.put("parentApplicationName", parentApplicationName);
+        json.put("parentServiceType", parentServiceType);
+        json.put("statisticsRowSlot", TimeUtils.reverseTimeMillis(statisticsRowSlot));
+        json.put("host", host);
+        json.put("bindApplicationName", bindApplicationName);
+        json.put("bindServiceType", bindServiceType);
+        IndexResponse response = transportClient.prepareIndex(HOST_APPLICATION_MAP_VER2.getNameAsString().toLowerCase(), HOST_APPLICATION_MAP_VER2.getNameAsString().toLowerCase())
+                .setSource(json, XContentType.JSON)
+                .get();
+        response.status();
+
+
     }
 
     private byte[] createColumnName(String host, String bindApplicationName, short bindServiceType) {
@@ -120,7 +143,7 @@ public class ESHostApplicationMapDao implements HostApplicationMapDao {
 
     private byte[] createRowKey(String parentApplicationName, short parentServiceType, long statisticsRowSlot, String parentAgentId) {
         final byte[] rowKey = createRowKey0(parentApplicationName, parentServiceType, statisticsRowSlot, parentAgentId);
-        return  rowKeyDistributor.getDistributedKey(rowKey);
+        return rowKeyDistributor.getDistributedKey(rowKey);
     }
 
     byte[] createRowKey0(String parentApplicationName, short parentServiceType, long statisticsRowSlot, String parentAgentId) {

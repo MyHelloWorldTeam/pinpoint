@@ -23,12 +23,12 @@ import com.navercorp.pinpoint.common.buffer.Buffer;
  * @author emeroad
  */
 public class CalleeColumnName implements ColumnName {
-    private final String callerAgentId;
-    private final short calleeServiceType;
-    private final String calleeApplicationName;
+    public final String callerAgentId;
+    public final short calleeServiceType;
+    public final String calleeApplicationName;
     // called or calling host
-    private final String callHost;
-    private final short columnSlotNumber;
+    public final String callHost;
+    public final short columnSlotNumber;
 
     // WARNING - cached hash value should not be included for equals/hashCode
     private int hash;

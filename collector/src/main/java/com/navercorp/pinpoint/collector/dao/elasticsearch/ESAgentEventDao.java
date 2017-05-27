@@ -19,26 +19,16 @@ package com.navercorp.pinpoint.collector.dao.elasticsearch;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.navercorp.pinpoint.collector.dao.AgentEventDao;
-import com.navercorp.pinpoint.collector.dao.hbase.mapper.AgentEventValueMapper;
-import com.navercorp.pinpoint.common.hbase.HBaseTables;
-import com.navercorp.pinpoint.common.hbase.HbaseOperations2;
 import com.navercorp.pinpoint.common.server.bo.AgentEventBo;
-import com.navercorp.pinpoint.common.server.util.AgentEventType;
-import com.navercorp.pinpoint.common.server.util.RowKeyUtils;
-import com.navercorp.pinpoint.common.util.BytesUtils;
-import com.navercorp.pinpoint.common.util.TimeUtils;
-import org.apache.hadoop.hbase.util.Bytes;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.Resource;
 
-import static com.navercorp.pinpoint.common.hbase.HBaseTables.AGENTINFO;
 import static com.navercorp.pinpoint.common.hbase.HBaseTables.AGENT_EVENT;
 
 /**

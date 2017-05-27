@@ -26,7 +26,9 @@ import com.navercorp.pinpoint.common.util.ApplicationMapStatisticsUtils;
 import com.navercorp.pinpoint.common.util.TimeSlot;
 import com.sematext.hbase.wd.RowKeyDistributorByHashPrefix;
 import org.apache.hadoop.hbase.client.Increment;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,9 +36,11 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.Resource;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.navercorp.pinpoint.common.hbase.HBaseTables.AGENT_STAT_VER2;
 import static com.navercorp.pinpoint.common.hbase.HBaseTables.MAP_STATISTICS_SELF_VER2;
 import static com.navercorp.pinpoint.common.hbase.HBaseTables.MAP_STATISTICS_SELF_VER2_CF_COUNTER;
 
@@ -142,8 +146,23 @@ public class ESMapResponseTimeDao implements MapResponseTimeDao {
             logger.debug("flush {} Increment:{}", this.getClass().getSimpleName(), merge.size());
         }
         //hbaseTemplate.increment(MAP_STATISTICS_SELF_VER2, merge);
-        //TODO
-        System.out.println(merge);
+
+        BulkRequestBuilder bulkRequest = transportClient.prepareBulk();
+        remove.entrySet().stream().forEach(p->{
+            Map json = new HashMap();
+            RowInfo r = p.getKey();
+            CallRowKey cr = (CallRowKey) r.getRowKey();
+            ResponseColumnName rc = (ResponseColumnName) r.getColumnName();
+            Long l = p.getValue();
+            json.put("callApplicationName",cr.callApplicationName);
+            json.put("callServiceType",cr.callServiceType);
+            json.put("rowTimeSlot",cr.rowTimeSlot);
+            json.put("agentId",rc.agentId);
+            json.put("columnSlotNumber",rc.columnSlotNumber);
+            json.put("slotNumber",l);
+            bulkRequest.add(transportClient.prepareIndex(MAP_STATISTICS_SELF_VER2.getNameAsString().toLowerCase(), MAP_STATISTICS_SELF_VER2.getNameAsString().toLowerCase())
+                    .setSource(json, XContentType.JSON));
+        });
     }
 
     private byte[] getDistributedKey(byte[] rowKey) {

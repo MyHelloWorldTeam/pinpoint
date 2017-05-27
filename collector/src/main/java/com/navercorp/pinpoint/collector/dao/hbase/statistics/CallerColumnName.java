@@ -22,11 +22,11 @@ import com.navercorp.pinpoint.common.util.ApplicationMapStatisticsUtils;
  * @author emeroad
  */
 public class CallerColumnName implements ColumnName {
-    private short callerServiceType;
-    private String callerApplicationName;
+    public short callerServiceType;
+    public String callerApplicationName;
     // called or calling host
-    private String callHost;
-    private short columnSlotNumber;
+    public String callHost;
+    public short columnSlotNumber;
 
     // WARNING - cached hash value should not be included for equals/hashCode
     private int hash;

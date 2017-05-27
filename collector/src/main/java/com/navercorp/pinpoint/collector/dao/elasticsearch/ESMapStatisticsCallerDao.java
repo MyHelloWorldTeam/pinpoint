@@ -29,6 +29,7 @@ import com.navercorp.pinpoint.common.util.TimeSlot;
 import com.sematext.hbase.wd.RowKeyDistributorByHashPrefix;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hbase.client.Increment;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.xcontent.XContentType;
@@ -39,12 +40,12 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.Resource;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.navercorp.pinpoint.common.hbase.HBaseTables.MAP_STATISTICS_CALLEE_VER2;
-import static com.navercorp.pinpoint.common.hbase.HBaseTables.MAP_STATISTICS_CALLEE_VER2_CF_COUNTER;
-import static com.navercorp.pinpoint.common.hbase.HBaseTables.TRACE_V2;
+import static com.navercorp.pinpoint.common.hbase.HBaseTables.*;
+import static com.navercorp.pinpoint.common.hbase.HBaseTables.MAP_STATISTICS_CALLER_VER2;
 
 /**
  * Update statistics of caller node
@@ -152,12 +153,26 @@ public class ESMapStatisticsCallerDao implements MapStatisticsCallerDao {
             logger.debug("flush {} Increment:{}", this.getClass().getSimpleName(), merge.size());
         }
 
-        try {
-            System.out.println(mapper.writeValueAsString(merge));
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-        }
         //hbaseTemplate.increment(MAP_STATISTICS_CALLEE_VER2, merge);
+        BulkRequestBuilder bulkRequest = transportClient.prepareBulk();
+        remove.entrySet().stream().forEach(p->{
+            Map json = new HashMap();
+            RowInfo r = p.getKey();
+            CallRowKey cr = (CallRowKey) r.getRowKey();
+            CalleeColumnName rc = (CalleeColumnName) r.getColumnName();
+            Long l = p.getValue();
+            json.put("callApplicationName",cr.callApplicationName);
+            json.put("callServiceType",cr.callServiceType);
+            json.put("rowTimeSlot",cr.rowTimeSlot);
+            json.put("calleeApplicationName",rc.calleeApplicationName);
+            json.put("calleeServiceType",rc.calleeServiceType);
+            json.put("callerAgentId",rc.callerAgentId);
+            json.put("callHost",rc.callHost);
+            json.put("columnSlotNumber",rc.columnSlotNumber);
+            json.put("slotNumber",l);
+            bulkRequest.add(transportClient.prepareIndex(MAP_STATISTICS_CALLEE_VER2.getNameAsString().toLowerCase(), MAP_STATISTICS_CALLEE_VER2.getNameAsString().toLowerCase())
+                    .setSource(json, XContentType.JSON));
+        });
     }
 
     private byte[] getDistributedKey(byte[] rowKey) {

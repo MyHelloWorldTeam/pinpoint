@@ -42,9 +42,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.Resource;
-
 import java.util.Calendar;
-import java.util.Date;
 
 import static com.navercorp.pinpoint.common.hbase.HBaseTables.AGENTINFO;
 

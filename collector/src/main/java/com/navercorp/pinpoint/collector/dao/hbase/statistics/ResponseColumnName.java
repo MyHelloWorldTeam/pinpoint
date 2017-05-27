@@ -23,8 +23,8 @@ import com.navercorp.pinpoint.common.util.ApplicationMapStatisticsUtils;
  */
 public class ResponseColumnName implements ColumnName {
 
-    private String agentId;
-    private short columnSlotNumber;
+    public String agentId;
+    public short columnSlotNumber;
 
  // WARNING - cached hash value should not be included for equals/hashCode
     private int hash;
