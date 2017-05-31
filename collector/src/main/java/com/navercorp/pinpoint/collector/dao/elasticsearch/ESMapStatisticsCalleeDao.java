@@ -29,6 +29,7 @@ import com.sematext.hbase.wd.RowKeyDistributorByHashPrefix;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hbase.client.Increment;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.slf4j.Logger;
@@ -150,7 +151,6 @@ public class ESMapStatisticsCalleeDao implements MapStatisticsCalleeDao {
         if (logger.isDebugEnabled()) {
             logger.debug("flush {} Increment:{}", this.getClass().getSimpleName(), merge.size());
         }
-        System.out.println(merge);
         //hbaseTemplate.increment(MAP_STATISTICS_CALLER_VER2, merge);
         BulkRequestBuilder bulkRequest = transportClient.prepareBulk();
         remove.entrySet().stream().forEach(p->{
@@ -170,6 +170,10 @@ public class ESMapStatisticsCalleeDao implements MapStatisticsCalleeDao {
             bulkRequest.add(transportClient.prepareIndex(MAP_STATISTICS_CALLER_VER2.getNameAsString().toLowerCase(), MAP_STATISTICS_CALLER_VER2.getNameAsString().toLowerCase())
                     .setSource(json, XContentType.JSON));
         });
+        BulkResponse bulkResponse = bulkRequest.get();
+        if (bulkResponse.hasFailures()) {
+            logger.warn("Insert MAP_STATISTICS_CALLER fail. {}", bulkResponse.buildFailureMessage());
+        }
 
     }
 

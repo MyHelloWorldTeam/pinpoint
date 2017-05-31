@@ -27,6 +27,7 @@ import com.navercorp.pinpoint.common.util.TimeSlot;
 import com.sematext.hbase.wd.RowKeyDistributorByHashPrefix;
 import org.apache.hadoop.hbase.client.Increment;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.slf4j.Logger;
@@ -163,6 +164,10 @@ public class ESMapResponseTimeDao implements MapResponseTimeDao {
             bulkRequest.add(transportClient.prepareIndex(MAP_STATISTICS_SELF_VER2.getNameAsString().toLowerCase(), MAP_STATISTICS_SELF_VER2.getNameAsString().toLowerCase())
                     .setSource(json, XContentType.JSON));
         });
+        BulkResponse bulkResponse = bulkRequest.get();
+        if (bulkResponse.hasFailures()) {
+            logger.warn("Insert MAP_STATISTICS_SELF fail. {}", bulkResponse.buildFailureMessage());
+        }
     }
 
     private byte[] getDistributedKey(byte[] rowKey) {

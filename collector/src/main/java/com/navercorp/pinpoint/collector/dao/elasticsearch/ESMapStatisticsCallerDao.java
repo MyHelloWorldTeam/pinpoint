@@ -30,6 +30,7 @@ import com.sematext.hbase.wd.RowKeyDistributorByHashPrefix;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hbase.client.Increment;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.xcontent.XContentType;
@@ -173,6 +174,10 @@ public class ESMapStatisticsCallerDao implements MapStatisticsCallerDao {
             bulkRequest.add(transportClient.prepareIndex(MAP_STATISTICS_CALLEE_VER2.getNameAsString().toLowerCase(), MAP_STATISTICS_CALLEE_VER2.getNameAsString().toLowerCase())
                     .setSource(json, XContentType.JSON));
         });
+        BulkResponse bulkResponse = bulkRequest.get();
+        if (bulkResponse.hasFailures()) {
+            logger.warn("Insert MAP_STATISTICS_CALLEE fail. {}", bulkResponse.buildFailureMessage());
+        }
     }
 
     private byte[] getDistributedKey(byte[] rowKey) {
